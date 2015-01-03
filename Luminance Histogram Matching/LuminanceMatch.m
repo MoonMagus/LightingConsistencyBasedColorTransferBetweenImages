@@ -68,11 +68,23 @@ for i = 2:x
     ListImage = strcat(ListImage,'|',char(filenames(i)));
 end
 SourceImagePopHandle = findobj('Tag','SourcePopMenu');
+for i=1:x
+    if strcmp(char(filenames(i)),'ÔÆÄÏ.jpg')==1
+        break;
+    end
+end
 set(SourceImagePopHandle,'String',ListImage);
 set(SourceImagePopHandle,'UserData',filenames);
+set(SourceImagePopHandle,'Value',i);
 TargetImagePopHandle = findobj('Tag','TargetPopMenu');
+for j=1:x
+    if strcmp(char(filenames(j)),'Âí¶û´ú·ò.jpg') == 1
+        break;
+    end
+end
 set(TargetImagePopHandle,'String',ListImage);
 set(TargetImagePopHandle,'UserData',filenames);
+set(TargetImagePopHandle,'Value',j);
 
 %% ÉèÖÃÍ¼Ïñ¿ò¼ÜÊôÐÔ.
 handles.ImageHandle = hObject;
@@ -249,14 +261,13 @@ SourceImagePopHandle = findobj(gcf,'Tag','SourcePopMenu');
 ListName = get(SourceImagePopHandle,'UserData');
 sname = char(ListName(get(SourceImagePopHandle,'Value')));
 s = imread(sname);
-% TargetImagePopHandle = findobj(gcf,'Tag','TargetPopMenu');
-% ListName = get(TargetImagePopHandle,'UserData');
-% tname = char(ListName(get(TargetImagePopHandle,'Value')));
-% t = imread(tname);
-tname = handles.CurrentTarget;
+TargetImagePopHandle = findobj(gcf,'Tag','TargetPopMenu');
+ListName = get(TargetImagePopHandle,'UserData');
+tname = char(ListName(get(TargetImagePopHandle,'Value')));
 t = imread(tname);
+% tname = handles.CurrentTarget;
+% t = imread(tname);
 handles.CurrentSource = sname;
-handles.CurrentTarget = tname;
 PlotAxis(handles,s,t);
 % Hints: contents = cellstr(get(hObject,'String')) returns SourcePopMenu contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from SourcePopMenu
@@ -280,17 +291,14 @@ function TargetPopMenu_Callback(hObject, eventdata, handles)
 % hObject    handle to TargetPopMenu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% SourceImagePopHandle = findobj(gcf,'Tag','SourcePopMenu');
-% ListName = get(SourceImagePopHandle,'UserData');
-% sname = char(ListName(get(SourceImagePopHandle,'Value')));
-% s = imread(sname);
- sname = handles.CurrentSource;
- s = imread(sname);
+SourceImagePopHandle = findobj(gcf,'Tag','SourcePopMenu');
+ListName = get(SourceImagePopHandle,'UserData');
+sname = char(ListName(get(SourceImagePopHandle,'Value')));
+s = imread(sname);
 TargetImagePopHandle = findobj(gcf,'Tag','TargetPopMenu');
 ListName = get(TargetImagePopHandle,'UserData');
 tname = char(ListName(get(TargetImagePopHandle,'Value')));
 t = imread(tname);
-handles.CurrentSource = sname;
 handles.CurrentTarget = tname;
 PlotAxis(handles,s,t);
 % Hints: contents = cellstr(get(hObject,'String')) returns TargetPopMenu contents as cell array
