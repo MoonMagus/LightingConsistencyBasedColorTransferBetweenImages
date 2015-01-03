@@ -267,7 +267,7 @@ tname = char(ListName(get(TargetImagePopHandle,'Value')));
 t = imread(tname);
 % tname = handles.CurrentTarget;
 % t = imread(tname);
-handles.CurrentSource = sname;
+%handles.CurrentSource = sname;
 PlotAxis(handles,s,t);
 % Hints: contents = cellstr(get(hObject,'String')) returns SourcePopMenu contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from SourcePopMenu
@@ -299,7 +299,7 @@ TargetImagePopHandle = findobj(gcf,'Tag','TargetPopMenu');
 ListName = get(TargetImagePopHandle,'UserData');
 tname = char(ListName(get(TargetImagePopHandle,'Value')));
 t = imread(tname);
-handles.CurrentTarget = tname;
+%handles.CurrentTarget = tname;
 PlotAxis(handles,s,t);
 % Hints: contents = cellstr(get(hObject,'String')) returns TargetPopMenu contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from TargetPopMenu
