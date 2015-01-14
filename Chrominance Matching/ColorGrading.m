@@ -22,7 +22,7 @@ function varargout = ColorGrading(varargin)
 
 % Edit the above text to modify the response to help ColorGrading
 
-% Last Modified by GUIDE v2.5 13-Jan-2015 05:16:09
+% Last Modified by GUIDE v2.5 14-Jan-2015 22:16:47
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -98,6 +98,20 @@ handles.GaussFilterHandle = findobj('Tag','GaussFilter');
 handles.SigmaTextHandle = findobj('Tag','SigmaText');
 handles.WidthTextHandle = findobj('Tag','WidthText');
 handles.HeightTextHandle = findobj('Tag','HeightText');
+handles.HueSyncHandle = findobj('Tag','HueSync');
+handles.TargetPanelHandle = findobj('Tag','TargetPanel');
+handles.ColorTargetAxisHandle = findobj('Tag','ColorTargetAxis');
+handles.HistTargetAxisHandle = findobj('Tag','HistTargetAxis');
+handles.LuminanceTargetAxisHandle = findobj('Tag','LuminanceTargetAxis');
+handles.SourcePanelHandle = findobj('Tag','SourcePanel');
+handles.ColorSourceAxisHandle = findobj('Tag','ColorSourceAxis');
+handles.HistSourceAxisHandle = findobj('Tag','HistSourceAxis');
+handles.LuminanceSourceAxisHandle = findobj('Tag','LuminanceSourceAxis');
+handles.ResultPanelHandle = findobj('Tag','ResultPanel');
+handles.ColorMatchedAxisHandle = findobj('Tag','ColorMatchedAxis');
+handles.HistMatchedAxisHandle = findobj('Tag','HistMatchedAxis');
+handles.LuminanceMatchedAxisHandle = findobj('Tag','LuminanceMatchedAxis');
+
 
 %% 载入源图像和目标图像.
 s = imread('云南.jpg');
@@ -140,6 +154,7 @@ SourceChannelL = SourcePreprocessed(:,:,1);
 SourceChannelA = SourcePreprocessed(:,:,2);
 SourceChannelB = SourcePreprocessed(:,:,3);
 
+
 % 设置目标图像坐标轴.
 CurrentImage = handles.ImageHandle;
 figure(CurrentImage);
@@ -154,6 +169,7 @@ set(ColorTargetHandle,'Units','Pixels',...
                       'YTick',[]);
 axes(ColorTargetHandle);
 imshow(t);
+handles.TargetImage = t;
 % 设置目标图像直方图坐标轴.
 HistTargetHandle = findobj(CurrentImage,'Tag','HistTargetAxis');
 if size(HistTargetHandle) ~= 0
@@ -169,6 +185,7 @@ LuminanceData = mat2gray(TargetChannelL,[0 100]);
 LuminanceData = im2uint8(LuminanceData);
 imhist(LuminanceData);
 histCount = imhist(LuminanceData);
+handles.LuminanceData = LuminanceData;
 % 设置目标图像辐照度坐标轴.                 
 LuminanceTargetHandle = findobj(CurrentImage,'Tag','LuminanceTargetAxis');
 if size(LuminanceTargetHandle) ~= 0
@@ -181,6 +198,8 @@ set(LuminanceTargetHandle, 'Units','Pixels',...
                            'YTick',[]);
 axes(LuminanceTargetHandle);
 imshow(LuminanceData);
+handles.LuminanceData = LuminanceData;
+
 % 设置源图像坐标轴.
 ColorSourceHandle = findobj(CurrentImage,'Tag','ColorSourceAxis');
 if size(ColorSourceHandle) ~= 0
@@ -193,6 +212,7 @@ set(ColorSourceHandle,'Units','Pixels',...
                       'YTick',[]);
 axes(ColorSourceHandle);
 imshow(s);
+handles.SourceImage = s;
 % 设置源图像直方图坐标轴.
 HistSourceHandle = findobj(CurrentImage,'Tag','HistSourceAxis');
 if size(HistSourceHandle) ~= 0
@@ -203,11 +223,11 @@ end
 set(HistSourceHandle,'Units','Pixels',...
                      'XTick',[],...
                      'YTick',[]);  
-axes(HistSourceHandle);
 LuminanceSource = mat2gray(SourceChannelL,[0 100]);
 LuminanceSource = im2uint8(LuminanceSource);
 axes(HistSourceHandle);
 imhist(LuminanceSource);
+handles.LuminanceSource = LuminanceSource;
 % 设置源图像辐照度坐标轴.                  
 LuminanceSourceHandle = findobj(CurrentImage,'Tag','LuminanceSourceAxis');
 if size(LuminanceSourceHandle) ~= 0
@@ -220,6 +240,8 @@ set(LuminanceSourceHandle, 'Units','Pixels',...
                            'YTick',[]);
 axes(LuminanceSourceHandle);
 imshow(LuminanceSource);
+
+
 % 设置匹配图像直方图坐标轴.
 HistMatchedHandle = findobj(CurrentImage,'Tag','HistMatchedAxis');
 if size(HistMatchedHandle) ~= 0
@@ -234,6 +256,7 @@ histCount = mat2gray(histCount);
 resultImage = histeq(LuminanceSource,histCount);
 axes(HistMatchedHandle);
 imhist(resultImage,256);
+handles.ResultImage = resultImage;
 % 设置匹配图像辐照度坐标轴.
 LuminanceMatchedHandle = findobj(CurrentImage,'Tag','LuminanceMatchedAxis');
 if size(LuminanceMatchedHandle) ~= 0
@@ -260,6 +283,16 @@ set(ColorMatchedHandle,'Units','Pixels',...
                            'YTick',[]);
 resultImageDouble = mat2gray(resultImage,[0 255]);
 resultImageDouble = resultImageDouble*100;
+
+%检测是否执行色调同步.
+HueSyncHandle = findobj(CurrentImage,'Tag','HueSync');
+if size(HueSyncHandle) ~= 0
+   handles.HueSyncHandle = HueSyncHandle; 
+else 
+   HueSyncHandle =  handles.HueSyncHandle;
+end
+HueSyncSwitch = get(HueSyncHandle,'Value');
+if HueSyncSwitch == 1
 [SourceChannelA , SourceChannelB] = ...
 ChrominanceTransform(SourceChannelL,...
                      SourceChannelA,...
@@ -267,6 +300,7 @@ ChrominanceTransform(SourceChannelL,...
                      TargetChannelL,...
                      TargetChannelA,...
                      TargetChannelB);
+end
 Result_image = Lab2RGB(resultImageDouble,SourceChannelA,SourceChannelB);
 
 %获取过滤器的参数值.
@@ -306,8 +340,10 @@ if FilterSwitch == 1
 end
 axes(ColorMatchedHandle);
 imshow(Result_image);
+handles.Result_image = Result_image;
 imwrite(Result_image,'色调迁移结果.jpg');
 handle = handles;
+guidata(CurrentImage,handles);
 
 
 % --- Executes on selection change in SourcePopMenu.
@@ -500,3 +536,304 @@ function SigmaText_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in HueSync.
+function HueSync_Callback(hObject, eventdata, handles)
+% hObject    handle to HueSync (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of HueSync
+
+
+%% --- Executes on button press in DetailButton.
+function DetailButton_Callback(hObject, eventdata, handles)
+% hObject    handle to DetailButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ContrastButtonHandle = findobj('Tag','ContrastButton');
+ContrastButtonValue = get(ContrastButtonHandle,'Value');
+if ContrastButtonValue ==1
+   set(ContrastButtonHandle,'Value',0);
+end
+CurrentImage = handles.ImageHandle;
+figure(CurrentImage);
+%设置目标源图像坐标轴.
+ColorTargetHandle = findobj(CurrentImage,'Tag','ColorTargetAxis');
+if size(ColorTargetHandle) ~= 0
+   handles.ColorTargetHandle = ColorTargetHandle; 
+else 
+   ColorTargetHandle = handles.ColorTargetHandle;
+end
+axes(ColorTargetHandle);
+cla reset;
+set(ColorTargetHandle,'Visible','on');
+TargetImage = handles.TargetImage;
+imshow(TargetImage);
+%设置目标直方图.
+HistTargetHandle = findobj(CurrentImage,'Tag','HistTargetAxis');
+if size(HistTargetHandle) ~= 0
+   handles.HistTargetHandle = HistTargetHandle; 
+else 
+   HistTargetHandle = handles.HistTargetHandle;
+end
+axes(HistTargetHandle);
+cla reset;
+set(HistTargetHandle,'Visible','on');
+LuminanceData = handles.LuminanceData;
+imhist(LuminanceData);
+%设置目标辐照图坐标轴.
+LuminanceTargetHandle = findobj(CurrentImage,'Tag','LuminanceTargetAxis');
+if size(LuminanceTargetHandle) ~= 0
+   handles.LuminanceTargetHandle = LuminanceTargetHandle; 
+else 
+    LuminanceTargetHandle = handles.LuminanceTargetHandle;
+end
+axes(LuminanceTargetHandle);
+cla reset;
+set(LuminanceTargetHandle,'Visible','on');
+imshow(LuminanceData);
+%设置目标面板.
+TargetPanelHandle = findobj('Tag','TargetPanel');
+if size(TargetPanelHandle) ~= 0
+   handles.TargetPanelHandle = TargetPanelHandle; 
+else 
+   TargetPanelHandle = handles.TargetPanelHandle;
+end
+set(TargetPanelHandle,'Visible','on');
+
+%设置源图像坐标轴.
+ColorSourceHandle = findobj(CurrentImage,'Tag','ColorSourceAxis');
+if size(ColorSourceHandle) ~= 0
+   handles.ColorSourceHandle = ColorSourceHandle; 
+else 
+    ColorSourceHandle = handles.ColorSourceHandle;
+end
+axes(ColorSourceHandle);
+cla reset;
+set(ColorSourceHandle,'Visible','on');
+SourceImage = handles.SourceImage;
+imshow(SourceImage);
+%设置源图像直方图坐标轴.
+HistSourceHandle = findobj(CurrentImage,'Tag','HistSourceAxis');
+if size(HistSourceHandle) ~= 0
+   handles.HistSourceHandle = HistSourceHandle; 
+else 
+    HistSourceHandle = handles.HistSourceHandle;
+end
+axes(HistSourceHandle);
+cla reset;
+set(HistSourceHandle,'Visible','on');
+LuminanceSource = handles.LuminanceSource;
+imhist(LuminanceSource);
+%设置源图像辐照度坐标轴.
+LuminanceSourceHandle = findobj(CurrentImage,'Tag','LuminanceSourceAxis');
+if size(LuminanceSourceHandle) ~= 0
+   handles.LuminanceSourceHandle = LuminanceSourceHandle; 
+else 
+    LuminanceSourceHandle = handles.LuminanceSourceHandle;
+end
+axes(LuminanceSourceHandle);
+cla reset;
+set(LuminanceSourceHandle,'Visible','on')
+imshow(LuminanceSource);
+% 设置源面板.
+SourcePanelHandle = findobj('Tag','SourcePanel');
+if size(SourcePanelHandle) ~= 0
+   handles.SourcePanelHandle = SourcePanelHandle; 
+else 
+   SourcePanelHandle = handles.SourcePanelHandle;
+end
+set(SourcePanelHandle,'Visible','on');
+
+%设置匹配图像坐标轴.
+ColorMatchedHandle = findobj(CurrentImage,'Tag','ColorMatchedAxis');
+if size(ColorMatchedHandle) ~= 0
+   handles.ColorMatchedHandle = ColorMatchedHandle; 
+else 
+    ColorMatchedHandle = handles.ColorMatchedHandle;
+end
+axes(ColorMatchedHandle);
+cla reset;
+set(ColorMatchedHandle,'Visible','on');
+ResultImage = handles.Result_image;
+imshow(ResultImage);
+%设置匹配图像直方图坐标轴.
+HistMatchedHandle = findobj(CurrentImage,'Tag','HistMatchedAxis');
+if size(HistMatchedHandle) ~= 0
+   handles.HistMatchedHandle = HistMatchedHandle; 
+else 
+    HistMatchedHandle = handles.HistMatchedHandle;
+end
+axes(HistMatchedHandle);
+cla reset;
+set(HistMatchedHandle,'Visible','on');
+TargetLuminance = handles.ResultImage;
+imhist(TargetLuminance);
+%设置匹配图像辐照度坐标轴.
+LuminanceMatchedHandle = findobj(CurrentImage,'Tag','LuminanceMatchedAxis');
+if size(LuminanceMatchedHandle) ~= 0
+   handles.LuminanceMatchedHandle = LuminanceMatchedHandle; 
+else 
+    LuminanceMatchedHandle = handles.LuminanceMatchedHandle;
+end
+axes(LuminanceMatchedHandle);
+cla reset;
+set(LuminanceMatchedHandle,'Visible','on');
+imshow(TargetLuminance);
+% 设置匹配面板.
+ResultPanelHandle = findobj('Tag','ResultPanel');
+if size(ResultPanelHandle) ~= 0
+   handles.ResultPanelHandle = ResultPanelHandle; 
+else 
+   ResultPanelHandle = handles.ResultPanelHandle;
+end
+set(ResultPanelHandle,'Visible','on');
+
+% Hint: get(hObject,'Value') returns toggle state of DetailButton
+
+
+%% --- Executes on button press in ContrastButton.
+function ContrastButton_Callback(hObject, eventdata, handles)
+% hObject    handle to ContrastButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+DetailButtonHandle = findobj('Tag','DetailButton');
+DetailButtonValue = get(DetailButtonHandle,'Value');
+if DetailButtonValue ==1
+   set(DetailButtonHandle,'Value',0);
+end
+CurrentImage = handles.ImageHandle;
+figure(CurrentImage);
+%设置目标源图像坐标轴.
+ColorTargetHandle = findobj(CurrentImage,'Tag','ColorTargetAxis');
+if size(ColorTargetHandle) ~= 0
+   handles.ColorTargetHandle = ColorTargetHandle; 
+else 
+    ColorTargetHandle = handles.ColorTargetHandle;
+end
+axes(ColorTargetHandle);
+cla reset;
+set(ColorTargetHandle,'Visible','off');
+%设置目标直方图.
+HistTargetHandle = findobj(CurrentImage,'Tag','HistTargetAxis');
+if size(HistTargetHandle) ~= 0
+   handles.HistTargetHandle = HistTargetHandle; 
+else 
+    HistTargetHandle = handles.HistTargetHandle;
+end
+axes(HistTargetHandle);
+cla reset;
+set(HistTargetHandle,'Visible','off');
+%设置目标辐照图坐标轴.
+LuminanceTargetHandle = findobj(CurrentImage,'Tag','LuminanceTargetAxis');
+if size(LuminanceTargetHandle) ~= 0
+   handles.LuminanceTargetHandle = LuminanceTargetHandle; 
+else 
+    LuminanceTargetHandle = handles.LuminanceTargetHandle;
+end
+axes(LuminanceTargetHandle);
+cla reset;
+set(LuminanceTargetHandle,'Visible','off');
+%设置目标面板.
+TargetPanelHandle = findobj('Tag','TargetPanel');
+if size(TargetPanelHandle) ~= 0
+   handles.TargetPanelHandle = TargetPanelHandle; 
+else 
+   TargetPanelHandle = handles.TargetPanelHandle;
+end
+set(TargetPanelHandle,'Visible','off');
+
+%设置源图像坐标轴.
+ColorSourceHandle = findobj(CurrentImage,'Tag','ColorSourceAxis');
+if size(ColorSourceHandle) ~= 0
+   handles.ColorSourceHandle = ColorSourceHandle; 
+else 
+    ColorSourceHandle = handles.ColorSourceHandle;
+end
+axes(ColorSourceHandle);
+cla reset;
+set(ColorSourceHandle,'Visible','off');
+%设置源图像直方图坐标轴.
+HistSourceHandle = findobj(CurrentImage,'Tag','HistSourceAxis');
+if size(HistSourceHandle) ~= 0
+   handles.HistSourceHandle = HistSourceHandle; 
+else 
+    HistSourceHandle = handles.HistSourceHandle;
+end
+axes(HistSourceHandle);
+cla reset;
+set(HistSourceHandle,'Visible','off');
+%设置源图像辐照度坐标轴.
+LuminanceSourceHandle = findobj(CurrentImage,'Tag','LuminanceSourceAxis');
+if size(LuminanceSourceHandle) ~= 0
+   handles.LuminanceSourceHandle = LuminanceSourceHandle; 
+else 
+    LuminanceSourceHandle = handles.LuminanceSourceHandle;
+end
+axes(LuminanceSourceHandle);
+cla reset;
+set(LuminanceSourceHandle,'Visible','off')
+% 设置源面板.
+SourcePanelHandle = findobj('Tag','SourcePanel');
+if size(SourcePanelHandle) ~= 0
+   handles.SourcePanelHandle = SourcePanelHandle; 
+else 
+   SourcePanelHandle = handles.SourcePanelHandle;
+end
+set(SourcePanelHandle,'Visible','off');
+%设置匹配图像坐标轴.
+ColorMatchedHandle = findobj(CurrentImage,'Tag','ColorMatchedAxis');
+if size(ColorMatchedHandle) ~= 0
+   handles.ColorMatchedHandle = ColorMatchedHandle; 
+else 
+    ColorMatchedHandle = handles.ColorMatchedHandle;
+end
+axes(ColorMatchedHandle);
+cla reset;
+set(ColorMatchedHandle,'Visible','off');
+%设置匹配图像直方图坐标轴.
+HistMatchedHandle = findobj(CurrentImage,'Tag','HistMatchedAxis');
+if size(HistMatchedHandle) ~= 0
+   handles.HistMatchedHandle = HistMatchedHandle; 
+else 
+    HistMatchedHandle = handles.HistMatchedHandle;
+end
+axes(HistMatchedHandle);
+cla reset;
+set(HistMatchedHandle,'Visible','off');
+%设置匹配图像辐照度坐标轴.
+LuminanceMatchedHandle = findobj(CurrentImage,'Tag','LuminanceMatchedAxis');
+if size(LuminanceMatchedHandle) ~= 0
+   handles.LuminanceMatchedHandle = LuminanceMatchedHandle; 
+else 
+    LuminanceMatchedHandle = handles.LuminanceMatchedHandle;
+end
+axes(LuminanceMatchedHandle);
+cla reset;
+set(LuminanceMatchedHandle,'Visible','off');
+% 设置匹配面板.
+ResultPanelHandle = findobj('Tag','ResultPanel');
+if size(ResultPanelHandle) ~= 0
+   handles.ResultPanelHandle = ResultPanelHandle; 
+else 
+   ResultPanelHandle = handles.ResultPanelHandle;
+end
+set(ResultPanelHandle,'Visible','off');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% Hint: get(hObject,'Value') returns toggle state of ContrastButton
