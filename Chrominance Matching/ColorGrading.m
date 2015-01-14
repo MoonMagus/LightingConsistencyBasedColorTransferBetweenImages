@@ -22,7 +22,7 @@ function varargout = ColorGrading(varargin)
 
 % Edit the above text to modify the response to help ColorGrading
 
-% Last Modified by GUIDE v2.5 14-Jan-2015 22:16:47
+% Last Modified by GUIDE v2.5 15-Jan-2015 04:04:03
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -90,6 +90,18 @@ set(TargetImagePopHandle,'String',ListImage);
 set(TargetImagePopHandle,'UserData',filenames);
 set(TargetImagePopHandle,'Value',j);
 
+%% 设置对照下拉菜单属性.
+ContrastListImages = '马尔代夫.jpg|云南.jpg|辐照度迁移结果.jpg|色调同步结果.jpg';
+ContrastUserData = {'马尔代夫.jpg';'云南.jpg';'辐照度迁移结果.jpg';'色调同步结果.jpg'};
+ContrastLeftPopMenuHandle = findobj('Tag','ContrastLeftPopMenu');
+set(ContrastLeftPopMenuHandle,'String',ContrastListImages);
+set(ContrastLeftPopMenuHandle,'UserData',ContrastUserData);
+set(ContrastLeftPopMenuHandle,'Value',2);
+ContrastRightPopMenuHandle = findobj('Tag','ContrastRightPopMenu');
+set(ContrastRightPopMenuHandle,'String',ContrastListImages);
+set(ContrastRightPopMenuHandle,'UserData',ContrastUserData);
+set(ContrastRightPopMenuHandle,'Value',3);
+
 %% 设置图像框架属性.
 handles.ImageHandle = hObject;
 handles.SourcePopHandle = SourceImagePopHandle;
@@ -111,6 +123,11 @@ handles.ResultPanelHandle = findobj('Tag','ResultPanel');
 handles.ColorMatchedAxisHandle = findobj('Tag','ColorMatchedAxis');
 handles.HistMatchedAxisHandle = findobj('Tag','HistMatchedAxis');
 handles.LuminanceMatchedAxisHandle = findobj('Tag','LuminanceMatchedAxis');
+handles.ContrastPanelHandle = findobj('Tag','ContrastPanel');
+handles.ImageLeftAxisHandle = findobj('Tag','ImageLeftAxis');
+handles.ImageRightAxisHandle = findobj('Tag','ImageRightAxis');
+handles.LeftContrastHandle = findobj('Tag','LeftContrastHandle');
+handles.RightContrastHandle = findobj('Tag','RightContrastHandle');
 
 
 %% 载入源图像和目标图像.
@@ -292,7 +309,7 @@ else
    HueSyncHandle =  handles.HueSyncHandle;
 end
 HueSyncSwitch = get(HueSyncHandle,'Value');
-if HueSyncSwitch == 1
+Luminance_Result_image = Lab2RGB(resultImageDouble,SourceChannelA,SourceChannelB);
 [SourceChannelA , SourceChannelB] = ...
 ChrominanceTransform(SourceChannelL,...
                      SourceChannelA,...
@@ -300,8 +317,7 @@ ChrominanceTransform(SourceChannelL,...
                      TargetChannelL,...
                      TargetChannelA,...
                      TargetChannelB);
-end
-Result_image = Lab2RGB(resultImageDouble,SourceChannelA,SourceChannelB);
+Huesync_Result_image = Lab2RGB(resultImageDouble,SourceChannelA,SourceChannelB);
 
 %获取过滤器的参数值.
 GaussFilterHandle = findobj(CurrentImage,'Tag','GaussFilter');
@@ -336,12 +352,22 @@ if FilterSwitch == 1
     sizef = [double(width) double(height)];
     sigma = str2double(sigma);
     gausFilter = fspecial('gaussian',sizef,sigma);
-    Result_image = imfilter(Result_image,gausFilter,'replicate');
+    if HueSyncSwitch == 0
+        Luminance_Result_image = imfilter(Luminance_Result_image,gausFilter,'replicate');
+    else
+        Huesync_Result_image = imfilter(Huesync_Result_image,gausFilter,'replicate');
+    end
 end
 axes(ColorMatchedHandle);
-imshow(Result_image);
-handles.Result_image = Result_image;
-imwrite(Result_image,'色调迁移结果.jpg');
+if HueSyncSwitch == 1
+    imshow(Huesync_Result_image);
+    handles.Result_image = Huesync_Result_image;
+else
+    imshow(Luminance_Result_image);
+    handles.Result_image = Luminance_Result_image;
+end
+imwrite(Luminance_Result_image,'辐照度迁移结果.jpg');
+imwrite(Huesync_Result_image,'色调同步结果.jpg');
 handle = handles;
 guidata(CurrentImage,handles);
 
@@ -397,15 +423,30 @@ function BeginButton_Callback(hObject, eventdata, handles)
 % hObject    handle to BeginButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-SourceImagePopHandle = findobj(gcf,'Tag','SourcePopMenu');
-ListName = get(SourceImagePopHandle,'UserData');
-sname = char(ListName(get(SourceImagePopHandle,'Value')));
-s = imread(sname);
-TargetImagePopHandle = findobj(gcf,'Tag','TargetPopMenu');
-ListName = get(TargetImagePopHandle,'UserData');
-tname = char(ListName(get(TargetImagePopHandle,'Value')));
-t = imread(tname);
-PlotAxis(handles,s,t);
+DetailButtonHandle = findobj('Tag','DetailButton');
+DetailButtonValue = get(DetailButtonHandle,'Value');
+if  DetailButtonValue ==1
+    SourceImagePopHandle = findobj(gcf,'Tag','SourcePopMenu');
+    ListName = get(SourceImagePopHandle,'UserData');
+    sname = char(ListName(get(SourceImagePopHandle,'Value')));
+    s = imread(sname);
+    TargetImagePopHandle = findobj(gcf,'Tag','TargetPopMenu');
+    ListName = get(TargetImagePopHandle,'UserData');
+    tname = char(ListName(get(TargetImagePopHandle,'Value')));
+    t = imread(tname);
+    ContrastListImages = strcat(tname,'|',sname,'|','辐照度迁移结果.jpg','|','色调同步结果.jpg');
+    ContrastUserData = {tname;sname;'辐照度迁移结果.jpg';'色调同步结果.jpg'};
+    ContrastLeftPopMenuHandle = findobj('Tag','ContrastLeftPopMenu');
+    set(ContrastLeftPopMenuHandle,'String',ContrastListImages);
+    set(ContrastLeftPopMenuHandle,'UserData',ContrastUserData);
+    set(ContrastLeftPopMenuHandle,'Value',2);
+    ContrastRightPopMenuHandle = findobj('Tag','ContrastRightPopMenu');
+    set(ContrastRightPopMenuHandle,'String',ContrastListImages);
+    set(ContrastRightPopMenuHandle,'UserData',ContrastUserData);
+    set(ContrastRightPopMenuHandle,'Value',3);
+    PlotAxis(handles,s,t);
+end
+
 
 
 % --- Executes on slider movement.
@@ -691,6 +732,48 @@ else
 end
 set(ResultPanelHandle,'Visible','on');
 
+% 显示对比面板,
+ContrastPanelHandle = findobj('Tag','ContrastPanel');
+if size(ContrastPanelHandle) ~= 0
+   handles.ContrastPanelHandle = ContrastPanelHandle; 
+else 
+   ContrastPanelHandle = handles.ContrastPanelHandle;
+end
+set(ContrastPanelHandle,'Visible','off');
+
+% 显示左对照面板.
+LeftContrastHandle = findobj('Tag','LeftContrast');
+if size(LeftContrastHandle) ~= 0
+   handles.LeftContrastHandle = LeftContrastHandle; 
+else 
+   LeftContrastHandle = handles.LeftContrastHandle;
+end
+set(LeftContrastHandle,'Visible','off');
+% 显示左图像坐标轴.
+ImageLeftAxisHandle = findobj('Tag','ImageLeftAxis');
+if size(ImageLeftAxisHandle) ~= 0
+   handles.ImageLeftAxisHandle = ImageLeftAxisHandle; 
+else 
+   ImageLeftAxisHandle = handles.ImageLeftAxisHandle;
+end
+set(ImageLeftAxisHandle,'Visible','off');
+
+% 显示右对照面板.
+RightContrastHandle = findobj('Tag','RightContrast');
+if size(RightContrastHandle) ~= 0
+   handles.RightContrastHandle = RightContrastHandle; 
+else 
+   RightContrastHandle = handles.RightContrastHandle;
+end
+set(RightContrastHandle,'Visible','off');
+% 显示右图像坐标轴.
+ImageRightAxisHandle = findobj('Tag','ImageRightAxis');
+if size(ImageRightAxisHandle) ~= 0
+   handles.ImageRightAxisHandle = ImageRightAxisHandle; 
+else 
+   ImageRightAxisHandle = handles.ImageRightAxisHandle;
+end
+set(ImageRightAxisHandle,'Visible','off');
 % Hint: get(hObject,'Value') returns toggle state of DetailButton
 
 
@@ -822,18 +905,126 @@ else
 end
 set(ResultPanelHandle,'Visible','off');
 
+% 显示对比面板,
+ContrastPanelHandle = findobj('Tag','ContrastPanel');
+if size(ContrastPanelHandle) ~= 0
+   handles.ContrastPanelHandle = ContrastPanelHandle; 
+else 
+   ContrastPanelHandle = handles.ContrastPanelHandle;
+end
+set(ContrastPanelHandle,'Visible','on');
 
+% 显示左对照面板.
+LeftContrastHandle = findobj('Tag','LeftContrast');
+if size(LeftContrastHandle) ~= 0
+   handles.LeftContrastHandle = LeftContrastHandle; 
+else 
+   LeftContrastHandle = handles.LeftContrastHandle;
+end
+set(LeftContrastHandle,'Visible','on');
+% 显示左图像坐标轴.
+ImageLeftAxisHandle = findobj('Tag','ImageLeftAxis');
+if size(ImageLeftAxisHandle) ~= 0
+   handles.ImageLeftAxisHandle = ImageLeftAxisHandle; 
+else 
+   ImageLeftAxisHandle = handles.ImageLeftAxisHandle;
+end
+set(ImageLeftAxisHandle,'Visible','on');
+axes(ImageLeftAxisHandle);
+cla reset;
+ContrastLeftPopMenuHandle = findobj(gcf,'Tag','ContrastLeftPopMenu');
+ListName = get(ContrastLeftPopMenuHandle,'UserData');
+sname = char(ListName(get(ContrastLeftPopMenuHandle,'Value')));
+s = imread(sname);
+imshow(s);
 
-
-
-
-
-
-
-
-
-
-
-
-
+% 显示右对照面板.
+RightContrastHandle = findobj('Tag','RightContrast');
+if size(RightContrastHandle) ~= 0
+   handles.RightContrastHandle = RightContrastHandle; 
+else 
+   RightContrastHandle = handles.RightContrastHandle;
+end
+set(RightContrastHandle,'Visible','on');
+% 显示右图像坐标轴.
+ImageRightAxisHandle = findobj('Tag','ImageRightAxis');
+if size(ImageRightAxisHandle) ~= 0
+   handles.ImageRightAxisHandle = ImageRightAxisHandle; 
+else 
+   ImageRightAxisHandle = handles.ImageRightAxisHandle;
+end
+set(ImageRightAxisHandle,'Visible','on');
+axes(ImageRightAxisHandle);
+cla reset;
+g = imread('辐照度迁移结果.jpg');
+imshow(g);
 % Hint: get(hObject,'Value') returns toggle state of ContrastButton
+
+
+% --- Executes on selection change in ContrastLeftPopMenu.
+function ContrastLeftPopMenu_Callback(hObject, eventdata, handles)
+% hObject    handle to ContrastLeftPopMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ImageLeftAxisHandle = findobj('Tag','ImageLeftAxis');
+if size(ImageLeftAxisHandle) ~= 0
+   handles.ImageLeftAxisHandle = ImageLeftAxisHandle; 
+else 
+   ImageLeftAxisHandle = handles.ImageLeftAxisHandle;
+end
+axes(ImageLeftAxisHandle);
+cla reset;
+ContrastLeftPopMenuHandle = findobj(gcf,'Tag','ContrastLeftPopMenu');
+ListName = get(ContrastLeftPopMenuHandle,'UserData');
+lname = char(ListName(get(ContrastLeftPopMenuHandle,'Value')));
+l = imread(lname);
+imshow(l);
+% Hints: contents = cellstr(get(hObject,'String')) returns ContrastLeftPopMenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from ContrastLeftPopMenu
+
+
+% --- Executes during object creation, after setting all properties.
+function ContrastLeftPopMenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ContrastLeftPopMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in ContrastRightPopMenu.
+function ContrastRightPopMenu_Callback(hObject, eventdata, handles)
+% hObject    handle to ContrastRightPopMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ImageRightAxisHandle = findobj('Tag','ImageRightAxis');
+if size(ImageRightAxisHandle) ~= 0
+   handles.ImageRightAxisHandle = ImageRightAxisHandle; 
+else 
+   ImageRightAxisHandle = handles.ImageRightAxisHandle;
+end
+axes(ImageRightAxisHandle);
+ContrastRightPopMenuHandle = findobj(gcf,'Tag','ContrastRightPopMenu');
+ListName = get(ContrastRightPopMenuHandle,'UserData');
+rname = char(ListName(get(ContrastRightPopMenuHandle,'Value')));
+r = imread(rname);
+imshow(r);
+% Hints: contents = cellstr(get(hObject,'String')) returns ContrastRightPopMenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from ContrastRightPopMenu
+
+
+% --- Executes during object creation, after setting all properties.
+function ContrastRightPopMenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ContrastRightPopMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
