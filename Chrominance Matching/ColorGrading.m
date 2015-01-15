@@ -22,7 +22,7 @@ function varargout = ColorGrading(varargin)
 
 % Edit the above text to modify the response to help ColorGrading
 
-% Last Modified by GUIDE v2.5 15-Jan-2015 07:06:53
+% Last Modified by GUIDE v2.5 15-Jan-2015 09:19:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -821,6 +821,14 @@ SaveImagesHandle = findobj('Tag','SaveImages');
 set(SaveImagesHandle,'Visible','off');
 BeginAjustHandle = findobj('Tag','BeginAjust');
 set(BeginAjustHandle,'Visible','off');
+greenTextHandle = findobj('Tag','greenText');
+set(greenTextHandle,'Visible','off');
+redtextHandle = findobj('Tag','redtext');
+set(redtextHandle,'Visible','off');
+bluetextHandle = findobj('Tag','bluetext');
+set(bluetextHandle,'Visible','off');
+yellowtextHandle = findobj('Tag','yellowtext');
+set(yellowtextHandle,'Visible','off');
 % Hint: get(hObject,'Value') returns toggle state of DetailButton
 
 
@@ -1043,6 +1051,14 @@ SaveImagesHandle = findobj('Tag','SaveImages');
 set(SaveImagesHandle,'Visible','on');
 BeginAjustHandle = findobj('Tag','BeginAjust');
 set(BeginAjustHandle,'Visible','on');
+greenTextHandle = findobj('Tag','greenText');
+set(greenTextHandle,'Visible','on');
+redtextHandle = findobj('Tag','redtext');
+set(redtextHandle,'Visible','on');
+bluetextHandle = findobj('Tag','bluetext');
+set(bluetextHandle,'Visible','on');
+yellowtextHandle = findobj('Tag','yellowtext');
+set(yellowtextHandle,'Visible','on');
 % Hint: get(hObject,'Value') returns toggle state of ContrastButton
 
 
@@ -1267,7 +1283,28 @@ function SaveImages_Callback(hObject, eventdata, handles)
 % hObject    handle to SaveImages (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+dirname = uigetdir('C:\Users\devil\Desktop\实验结果','浏览文件夹');
+ContrastLeftPopMenuHandle = findobj('Tag','ContrastLeftPopMenu');
+UserData = get(ContrastLeftPopMenuHandle,'UserData');
+ContrastRightPopMenuHandle = findobj(gcf,'Tag','ContrastRightPopMenu');
+ListName = get(ContrastRightPopMenuHandle,'UserData');
+CurrentName = char(ListName(get(ContrastRightPopMenuHandle,'Value')));
+t = imread(char(UserData(1)));
+TargetName = strcat(dirname,'\','1.参考图像.jpg');
+imwrite(t,TargetName);
+s = imread(char(UserData(2)));
+SourceName = strcat(dirname,'\','2.源图像.jpg');
+imwrite(s,SourceName);
+l = imread(char(UserData(3)));
+if strcmp(CurrentName,'辐照度迁移结果.jpg') == 1
+   LuminanceName = strcat(dirname,'\','3-1.辐照度迁移图像.jpg');
+   imwrite(l,LuminanceName);
+end
+h = imread(char(UserData(4)));
+if strcmp(CurrentName,'色调同步结果.jpg') == 1
+   HuesyncName = strcat(dirname,'\','4-1.色调同步图像.jpg');
+   imwrite(h,HuesyncName);
+end
 
 % --- Executes on button press in ControlOpenSwitch.
 function ControlOpenSwitch_Callback(hObject, eventdata, handles)
@@ -1329,3 +1366,24 @@ g =  imread(rname);
 imshow(g);
 end
 
+
+% --- Executes on button press in SaveButton.
+function SaveButton_Callback(hObject, eventdata, handles)
+% hObject    handle to SaveButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+dirname = uigetdir('C:\Users\devil\Desktop\实验结果','浏览文件夹');
+ContrastLeftPopMenuHandle = findobj('Tag','ContrastLeftPopMenu');
+UserData = get(ContrastLeftPopMenuHandle,'UserData');
+t = imread(char(UserData(1)));
+TargetName = strcat(dirname,'\','1.参考图像.jpg');
+imwrite(t,TargetName);
+s = imread(char(UserData(2)));
+SourceName = strcat(dirname,'\','2.源图像.jpg');
+imwrite(s,SourceName);
+l = imread(char(UserData(3)));
+LuminanceName = strcat(dirname,'\','3.辐照度迁移图像.jpg');
+imwrite(l,LuminanceName);
+h = imread(char(UserData(4)));
+HuesyncName = strcat(dirname,'\','4.色调同步图像.jpg');
+imwrite(h,HuesyncName);
