@@ -22,7 +22,7 @@ function varargout = ColorGrading(varargin)
 
 % Edit the above text to modify the response to help ColorGrading
 
-% Last Modified by GUIDE v2.5 15-Jan-2015 04:04:03
+% Last Modified by GUIDE v2.5 15-Jan-2015 07:06:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,7 +54,7 @@ function ColorGrading_OpeningFcn(hObject, eventdata, handles, varargin)
 %            command line (see VARARGIN)
 
 %%
-set(hObject,'Name','辐照度直方图迁移');
+set(hObject,'Name','基于光照一致的色调融合');
 
 %% 设置下拉菜单属性.
 dirs1 = dir('*.jpg');
@@ -135,6 +135,8 @@ s = imread('云南.jpg');
 t = imread('马尔代夫.jpg');
 handles.CurrentSource = '云南.jpg';
 handles.CurrentTarget = '马尔代夫.jpg';
+handles.sname = '云南.jpg';
+handles.tname = '马尔代夫.jpg';
 handles = PlotAxis(handles,s,t);
 
 %% Choose default command line output for ColorGrading
@@ -366,6 +368,8 @@ else
     imshow(Luminance_Result_image);
     handles.Result_image = Luminance_Result_image;
 end
+handles.Luminance_Result_image = Luminance_Result_image;
+handles.Huesync_Result_image = Huesync_Result_image;
 imwrite(Luminance_Result_image,'辐照度迁移结果.jpg');
 imwrite(Huesync_Result_image,'色调同步结果.jpg');
 handle = handles;
@@ -426,6 +430,7 @@ function BeginButton_Callback(hObject, eventdata, handles)
 DetailButtonHandle = findobj('Tag','DetailButton');
 DetailButtonValue = get(DetailButtonHandle,'Value');
 if  DetailButtonValue ==1
+    CurrentImage = handles.ImageHandle;
     SourceImagePopHandle = findobj(gcf,'Tag','SourcePopMenu');
     ListName = get(SourceImagePopHandle,'UserData');
     sname = char(ListName(get(SourceImagePopHandle,'Value')));
@@ -434,6 +439,9 @@ if  DetailButtonValue ==1
     ListName = get(TargetImagePopHandle,'UserData');
     tname = char(ListName(get(TargetImagePopHandle,'Value')));
     t = imread(tname);
+    handles.sname = sname;
+    handles.tname = tname;
+    guidata(CurrentImage,handles);
     ContrastListImages = strcat(tname,'|',sname,'|','辐照度迁移结果.jpg','|','色调同步结果.jpg');
     ContrastUserData = {tname;sname;'辐照度迁移结果.jpg';'色调同步结果.jpg'};
     ContrastLeftPopMenuHandle = findobj('Tag','ContrastLeftPopMenu');
@@ -774,6 +782,45 @@ else
    ImageRightAxisHandle = handles.ImageRightAxisHandle;
 end
 set(ImageRightAxisHandle,'Visible','off');
+
+% 隐藏对照控制坐标轴.
+% 显示对照控制面板.
+ContrastControlPanelHandle = findobj('Tag','ContrastControlPanel');
+set(ContrastControlPanelHandle,'Visible','off');
+ChannelControlPanelHandle = findobj('Tag','ChannelControlPanel');
+set(ChannelControlPanelHandle,'Visible','off');
+LHandle = findobj('Tag','L');
+set(LHandle,'Visible','off');
+AHandle = findobj('Tag','A');
+set(AHandle,'Visible','off');
+BHandle = findobj('Tag','B');
+set(BHandle,'Visible','off');
+SliderLHandle = findobj('Tag','SliderL');
+set(SliderLHandle,'Visible','off');
+SliderAHandle = findobj('Tag','SliderA');
+set(SliderAHandle,'Visible','off');
+SliderBHandle = findobj('Tag','SliderB');
+set(SliderBHandle,'Visible','off');
+TextLHandle = findobj('Tag','TextL');
+set(TextLHandle,'Visible','off');
+TextAHandle = findobj('Tag','TextA');
+set(TextAHandle,'Visible','off');
+TextBHandle = findobj('Tag','TextB');
+set(TextBHandle,'Visible','off');
+text18Handle = findobj('Tag','text18');
+set(text18Handle,'Visible','off');
+text22Handle = findobj('Tag','text22');
+set(text22Handle,'Visible','off');
+text20Handle = findobj('Tag','text20');
+set(text20Handle,'Visible','off');
+IntialScailingHandle = findobj('Tag','IntialScailing');
+set(IntialScailingHandle,'Visible','off');
+EndScailingHandle = findobj('Tag','EndScailing');
+set(EndScailingHandle,'Visible','off');
+SaveImagesHandle = findobj('Tag','SaveImages');
+set(SaveImagesHandle,'Visible','off');
+BeginAjustHandle = findobj('Tag','BeginAjust');
+set(BeginAjustHandle,'Visible','off');
 % Hint: get(hObject,'Value') returns toggle state of DetailButton
 
 
@@ -958,6 +1005,44 @@ axes(ImageRightAxisHandle);
 cla reset;
 g = imread('辐照度迁移结果.jpg');
 imshow(g);
+
+% 显示对照控制面板.
+ContrastControlPanelHandle = findobj('Tag','ContrastControlPanel');
+set(ContrastControlPanelHandle,'Visible','on');
+ChannelControlPanelHandle = findobj('Tag','ChannelControlPanel');
+set(ChannelControlPanelHandle,'Visible','on');
+LHandle = findobj('Tag','L');
+set(LHandle,'Visible','on');
+AHandle = findobj('Tag','A');
+set(AHandle,'Visible','on');
+BHandle = findobj('Tag','B');
+set(BHandle,'Visible','on');
+SliderLHandle = findobj('Tag','SliderL');
+set(SliderLHandle,'Visible','on');
+SliderAHandle = findobj('Tag','SliderA');
+set(SliderAHandle,'Visible','on');
+SliderBHandle = findobj('Tag','SliderB');
+set(SliderBHandle,'Visible','on');
+TextLHandle = findobj('Tag','TextL');
+set(TextLHandle,'Visible','on');
+TextAHandle = findobj('Tag','TextA');
+set(TextAHandle,'Visible','on');
+TextBHandle = findobj('Tag','TextB');
+set(TextBHandle,'Visible','on');
+text18Handle = findobj('Tag','text18');
+set(text18Handle,'Visible','on');
+text22Handle = findobj('Tag','text22');
+set(text22Handle,'Visible','on');
+text20Handle = findobj('Tag','text20');
+set(text20Handle,'Visible','on');
+IntialScailingHandle = findobj('Tag','IntialScailing');
+set(IntialScailingHandle,'Visible','on');
+EndScailingHandle = findobj('Tag','EndScailing');
+set(EndScailingHandle,'Visible','on');
+SaveImagesHandle = findobj('Tag','SaveImages');
+set(SaveImagesHandle,'Visible','on');
+BeginAjustHandle = findobj('Tag','BeginAjust');
+set(BeginAjustHandle,'Visible','on');
 % Hint: get(hObject,'Value') returns toggle state of ContrastButton
 
 
@@ -1028,3 +1113,219 @@ function ContrastRightPopMenu_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on slider movement.
+function SliderL_Callback(hObject, eventdata, handles)
+% hObject    handle to SliderL (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+LuminanceValue = get(hObject,'Value');
+TextLHandle = findobj(gcf,'Tag','TextL');
+set(TextLHandle,'String',ceil(LuminanceValue));
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function SliderL_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SliderL (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+
+function TextL_Callback(hObject, eventdata, handles)
+% hObject    handle to TextL (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+LValue = get(hObject,'String');
+SliderLHandle = findobj(gcf,'Tag','SliderL');
+set(SliderLHandle,'Value',ceil(str2double(LValue)));
+% Hints: get(hObject,'String') returns contents of TextL as text
+%        str2double(get(hObject,'String')) returns contents of TextL as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function TextL_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to TextL (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on slider movement.
+function SliderA_Callback(hObject, eventdata, handles)
+% hObject    handle to SliderA (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+AValue = get(hObject,'Value');
+TextAHandle = findobj(gcf,'Tag','TextA');
+set(TextAHandle,'String',ceil(AValue));
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function SliderA_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SliderA (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+
+function TextA_Callback(hObject, eventdata, handles)
+% hObject    handle to TextA (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+AValue = get(hObject,'String');
+SliderAHandle = findobj(gcf,'Tag','SliderA');
+set(SliderAHandle,'Value',ceil(str2double(AValue)));
+% Hints: get(hObject,'String') returns contents of TextA as text
+%        str2double(get(hObject,'String')) returns contents of TextA as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function TextA_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to TextA (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on slider movement.
+function SliderB_Callback(hObject, eventdata, handles)
+% hObject    handle to SliderB (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+BValue = get(hObject,'Value');
+TextBHandle = findobj(gcf,'Tag','TextB');
+set(TextBHandle,'String',ceil(BValue));
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function SliderB_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SliderB (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+
+function TextB_Callback(hObject, eventdata, handles)
+% hObject    handle to TextB (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+BValue = get(hObject,'String');
+SliderBHandle = findobj(gcf,'Tag','SliderB');
+set(SliderBHandle,'Value',ceil(str2double(BValue)));
+% Hints: get(hObject,'String') returns contents of TextB as text
+%        str2double(get(hObject,'String')) returns contents of TextB as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function TextB_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to TextB (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in SaveImages.
+function SaveImages_Callback(hObject, eventdata, handles)
+% hObject    handle to SaveImages (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in ControlOpenSwitch.
+function ControlOpenSwitch_Callback(hObject, eventdata, handles)
+% hObject    handle to ControlOpenSwitch (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ImageLeftAxisHandle = findobj('Tag','ImageLeftAxis');
+axes(ImageLeftAxisHandle);
+s = imread(handles.sname);
+imshow(s);
+ImageLeftAxisHandle = findobj('Tag','ImageLeftAxis');
+axes(ImageLeftAxisHandle);
+s = imread(handles.sname);
+imshow(s);
+
+% Hint: get(hObject,'Value') returns toggle state of ControlOpenSwitch
+
+
+% --- Executes on button press in BeginAjust.
+function BeginAjust_Callback(hObject, eventdata, handles)
+% hObject    handle to BeginAjust (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ContrastRightPopMenuHandle = findobj(gcf,'Tag','ContrastRightPopMenu');
+ListName = get(ContrastRightPopMenuHandle,'UserData');
+rname = char(ListName(get(ContrastRightPopMenuHandle,'Value')));
+if strcmp(rname,'辐照度迁移结果.jpg') == 1 || strcmp(rname,'色调同步结果.jpg')
+   if strcmp(rname,'辐照度迁移结果.jpg') == 1
+       f = handles.Luminance_Result_image;
+   else
+       f = handles.Huesync_Result_image;
+   end
+   LAB = RGB2Lab(f);
+   TextLHandle = findobj('Tag','TextL');
+   LScale = get(TextLHandle,'String');
+   LScale = str2double(LScale)/100;
+   TextAHandle = findobj('Tag','TextA');
+   AScale = get(TextAHandle,'String');
+   AScale = str2double(AScale)/100;
+   TextBHandle = findobj('Tag','TextB');
+   BScale = get(TextBHandle,'String');
+   BScale = str2double(BScale)/100;
+   LuminanceImage = Lab2RGB(LAB(:,:,1)*LScale,LAB(:,:,2)*AScale,LAB(:,:,3)*BScale);
+   if strcmp(rname,'辐照度迁移结果.jpg') == 1
+      imwrite(LuminanceImage,'辐照度迁移结果.jpg');
+   else
+      imwrite(LuminanceImage,'色调同步结果.jpg');
+   end
+end
+if strcmp(rname,'辐照度迁移结果.jpg') == 1 || strcmp(rname,'色调同步结果.jpg')
+ImageRightAxisHandle = findobj('Tag','ImageRightAxis');
+if size(ImageRightAxisHandle) ~= 0
+   handles.ImageRightAxisHandle = ImageRightAxisHandle; 
+else 
+   ImageRightAxisHandle = handles.ImageRightAxisHandle;
+end
+axes(ImageRightAxisHandle);
+g =  imread(rname);
+imshow(g);
+end
+
