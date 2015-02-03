@@ -19,7 +19,7 @@ if nargin == 0
     OpenMatteT = 1;
     OpenMatteS = 1;
 end
-
+Alpha = 0.1;
 %% 将蒙版叠加到目标图像上.
 t = Target;
 if OpenMatteT == 1
@@ -29,11 +29,8 @@ if OpenMatteT == 1
     bmt = im2bw(dmt,0.5);
     rmt = double(repmat(bmt,[1 1 3]));
     rt = im2uint8(dt.*rmt);
-    %figure,imshow(rt);
-    %imwrite(rt,'C:\Users\devil\Desktop\前后景分割\1.目标图像.jpg');
 else
     rt = t;
-    %figure,imshow(t);
 end
 
 % 抽取目标蒙版有效区域.
@@ -63,22 +60,22 @@ lth = ChannelLTargetLocalMatte;
 
 % 计算目标图像特征矩阵.
 % 计算目标阴影带平均值和协方差矩阵.
-ShadowATargetLocalMatte = ChannelATargetLocalMatte(IndexTargetLocalMatte(1:floor(SizeTargetLocalMatte/3)));
-ShadowBTargetLocalMatte = ChannelBTargetLocalMatte(IndexTargetLocalMatte(1:floor(SizeTargetLocalMatte/3)));
-MeanShadowATargetLocalMatte = sum(ShadowATargetLocalMatte)/(SizeTargetLocalMatte/3);
-MeanShadowBTargetLocalMatte = sum(ShadowBTargetLocalMatte)/(SizeTargetLocalMatte/3);
+ShadowATargetLocalMatte = ChannelATargetLocalMatte(IndexTargetLocalMatte(1:floor((1+Alpha)*SizeTargetLocalMatte/3)));
+ShadowBTargetLocalMatte = ChannelBTargetLocalMatte(IndexTargetLocalMatte(1:floor((1+Alpha)*SizeTargetLocalMatte/3)));
+MeanShadowATargetLocalMatte = sum(ShadowATargetLocalMatte)/((1+Alpha)*SizeTargetLocalMatte/3);
+MeanShadowBTargetLocalMatte = sum(ShadowBTargetLocalMatte)/((1+Alpha)*SizeTargetLocalMatte/3);
 CovShadowTargetLocalMatte   = cov(ShadowATargetLocalMatte,ShadowBTargetLocalMatte);
 % 计算目标中间带平均值和协方差矩阵.
-MiddleATargetLocalMatte = ChannelATargetLocalMatte(IndexTargetLocalMatte(floor(SizeTargetLocalMatte/3)+1:floor(2*SizeTargetLocalMatte/3)));
-MiddleBTargetLocalMatte = ChannelBTargetLocalMatte(IndexTargetLocalMatte(floor(SizeTargetLocalMatte/3)+1:floor(2*SizeTargetLocalMatte/3)));
-MeanMiddleATargetLocalMatte = sum(MiddleATargetLocalMatte)/(SizeTargetLocalMatte/3);
-MeanMiddleBTargetLocalMatte = sum(MiddleBTargetLocalMatte)/(SizeTargetLocalMatte/3);
+MiddleATargetLocalMatte = ChannelATargetLocalMatte(IndexTargetLocalMatte(floor((1-Alpha)*SizeTargetLocalMatte/3)+1:floor((2+Alpha)*SizeTargetLocalMatte/3)));
+MiddleBTargetLocalMatte = ChannelBTargetLocalMatte(IndexTargetLocalMatte(floor((1-Alpha)*SizeTargetLocalMatte/3)+1:floor((2+Alpha)*SizeTargetLocalMatte/3)));
+MeanMiddleATargetLocalMatte = sum(MiddleATargetLocalMatte)/((1+2*Alpha)*SizeTargetLocalMatte/3);
+MeanMiddleBTargetLocalMatte = sum(MiddleBTargetLocalMatte)/((1+2*Alpha)*SizeTargetLocalMatte/3);
 CovMiddleTargetLocalMatte   = cov(MiddleATargetLocalMatte,MiddleBTargetLocalMatte);
 % 计算目标高亮带平均值和协方差矩阵.
-HighATargetLocalMatte = ChannelATargetLocalMatte(IndexTargetLocalMatte(floor(2*SizeTargetLocalMatte/3)+1:SizeTargetLocalMatte));
-HighBTargetLocalMatte = ChannelBTargetLocalMatte(IndexTargetLocalMatte(floor(2*SizeTargetLocalMatte/3)+1:SizeTargetLocalMatte));
-MeanHighATargetLocalMatte = sum(HighATargetLocalMatte)/(SizeTargetLocalMatte/3);
-MeanHighBTargetLocalMatte = sum(HighBTargetLocalMatte)/(SizeTargetLocalMatte/3);
+HighATargetLocalMatte = ChannelATargetLocalMatte(IndexTargetLocalMatte(floor((2-Alpha)*SizeTargetLocalMatte/3)+1:SizeTargetLocalMatte));
+HighBTargetLocalMatte = ChannelBTargetLocalMatte(IndexTargetLocalMatte(floor((2-Alpha)*SizeTargetLocalMatte/3)+1:SizeTargetLocalMatte));
+MeanHighATargetLocalMatte = sum(HighATargetLocalMatte)/((1+Alpha)*SizeTargetLocalMatte/3);
+MeanHighBTargetLocalMatte = sum(HighBTargetLocalMatte)/((1+Alpha)*SizeTargetLocalMatte/3);
 CovHighTargetLocalMatte = cov(HighATargetLocalMatte,HighBTargetLocalMatte);
 
 
@@ -93,15 +90,14 @@ if  OpenMatteS == 1
     bms = im2bw(dms,0.5);
     rms = double(repmat(bms,[1 1 3]));
     rs = im2uint8(ds.*rms);
-    %figure,imshow(rs);
 else
     rs = s;
-    %figure,imshow(s);
 end
 
 % 抽取源图像蒙版有效区域.
 if  OpenMatteS == 1
     LABSourceMatteImage = RGB2Lab(rs);
+    %若源图像具有指定模板，则定义原始图像用于输出.
     LABSourceImage = RGB2Lab(s);
 else
     LABSourceMatteImage = RGB2Lab(s);
@@ -109,12 +105,14 @@ end
 LABSourceMatteChannelL = LABSourceMatteImage(:,:,1);
 LABSourceMatteChannelA = LABSourceMatteImage(:,:,2);
 LABSourceMatteChannelB = LABSourceMatteImage(:,:,3);
+% 保持目标区域的A、B通道用于输出.
 LABSourceMatteLuminanceOnlyChannelA = LABSourceMatteChannelA;
 LABSourceMatteLuminanceOnlyChannelB = LABSourceMatteChannelB;
 if OpenMatteS == 1
     LABSourceChannelL = LABSourceImage(:,:,1);
     LABSourceChannelA = LABSourceImage(:,:,2);
     LABSourceChannelB = LABSourceImage(:,:,3);
+    % 保存源图像的L通道用于直方图统计.
     SynSL = LABSourceChannelL;
     LABSourceLuminanceOnlyChannelA = LABSourceChannelA;
     LABSourceLuminanceOnlyChannelB = LABSourceChannelB;
@@ -149,6 +147,7 @@ resultImageDouble = resultImageDouble*100;
 LABSourceMatteChannelL(IndexSourceMatte) = resultImageDouble;
 if  OpenMatteS == 1 
     LABSourceChannelL(IndexSourceMatte) = resultImageDouble;
+     % 保存源图像拉伸后的L通道用于直方图统计.
     SynRL = LABSourceChannelL;
 else 
     SynRL = 0;
@@ -161,22 +160,22 @@ lrh = resultImageDouble;
 
 % 计算目标图像特征矩阵.
 % 计算源图像阴影带平均值和协方差矩阵.
-ShadowASourceLocalMatte = ChannelASourceLocalMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3)));
-ShadowBSourceLocalMatte = ChannelBSourceLocalMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3)));
-MeanShadowASourceLocalMatte = sum(ShadowASourceLocalMatte)/(SizeSourceLocalMatte/3);
-MeanShadowBSourceLocalMatte = sum(ShadowBSourceLocalMatte)/(SizeSourceLocalMatte/3);
+ShadowASourceLocalMatte = ChannelASourceLocalMatte(IndexSourceLocalMatte(1:floor((1+Alpha)*SizeSourceLocalMatte/3)));
+ShadowBSourceLocalMatte = ChannelBSourceLocalMatte(IndexSourceLocalMatte(1:floor((1+Alpha)*SizeSourceLocalMatte/3)));
+MeanShadowASourceLocalMatte = sum(ShadowASourceLocalMatte)/((1+Alpha)*SizeSourceLocalMatte/3);
+MeanShadowBSourceLocalMatte = sum(ShadowBSourceLocalMatte)/((1+Alpha)*SizeSourceLocalMatte/3);
 CovShadowSourceLocalMatte   = cov(ShadowASourceLocalMatte,ShadowBSourceLocalMatte);
 % 计算源图像中间带平均值和协方差矩阵.
-MiddleASourceLocalMatte = ChannelASourceLocalMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)));
-MiddleBSourceLocalMatte = ChannelBSourceLocalMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)));
-MeanMiddleASourceLocalMatte = sum(MiddleASourceLocalMatte)/(SizeSourceLocalMatte/3);
-MeanMiddleBSourceLocalMatte = sum(MiddleBSourceLocalMatte)/(SizeSourceLocalMatte/3);
+MiddleASourceLocalMatte = ChannelASourceLocalMatte(IndexSourceLocalMatte(floor((1-Alpha)*SizeSourceLocalMatte/3)+1:floor((2+Alpha)*SizeSourceLocalMatte/3)));
+MiddleBSourceLocalMatte = ChannelBSourceLocalMatte(IndexSourceLocalMatte(floor((1-Alpha)*SizeSourceLocalMatte/3)+1:floor((2+Alpha)*SizeSourceLocalMatte/3)));
+MeanMiddleASourceLocalMatte = sum(MiddleASourceLocalMatte)/((1+2*Alpha)*SizeSourceLocalMatte/3);
+MeanMiddleBSourceLocalMatte = sum(MiddleBSourceLocalMatte)/((1+2*Alpha)*SizeSourceLocalMatte/3);
 CovMiddleSourceLocalMatte   = cov(MiddleASourceLocalMatte,MiddleBSourceLocalMatte);
 % 计算源图像高亮带平均值和协方差矩阵.
-HighASourceLocalMatte = ChannelASourceLocalMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte));
-HighBSourceLocalMatte = ChannelBSourceLocalMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte));
-MeanHighASourceLocalMatte = sum(HighASourceLocalMatte)/(SizeSourceLocalMatte/3);
-MeanHighBSourceLocalMatte = sum(HighBSourceLocalMatte)/(SizeSourceLocalMatte/3);
+HighASourceLocalMatte = ChannelASourceLocalMatte(IndexSourceLocalMatte(floor((2-Alpha)*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte));
+HighBSourceLocalMatte = ChannelBSourceLocalMatte(IndexSourceLocalMatte(floor((2-Alpha)*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte));
+MeanHighASourceLocalMatte = sum(HighASourceLocalMatte)/((1+Alpha)*SizeSourceLocalMatte/3);
+MeanHighBSourceLocalMatte = sum(HighBSourceLocalMatte)/((1+Alpha)*SizeSourceLocalMatte/3);
 CovHighSourceLocalMatte = cov(HighASourceLocalMatte,HighBSourceLocalMatte);
 
 
@@ -214,29 +213,88 @@ SA = ShadowASourceLocalMatte;
 SB = ShadowBSourceLocalMatte;
 TransformShadowData = [SA' - SMSA;SB' - SMSB];
 MatrixShadow = ShadowTransformMatrix*TransformShadowData;
-LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3))))= MatrixShadow(1,:) + TMSA;
-LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3)))) = MatrixShadow(2,:) + TMSB;
-LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3))))= MatrixShadow(1,:) + TMSA;
-LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3)))) = MatrixShadow(2,:) + TMSB;
+ShadowA = MatrixShadow(1,:) + TMSA;
+ShadowB = MatrixShadow(2,:) + TMSB;
+numShadow = floor((1-Alpha)*SizeSourceLocalMatte/3);
+LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(1:numShadow))) = ShadowA(1:numShadow);
+LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(1:numShadow))) = ShadowB(1:numShadow);
+if  OpenMatteS == 1
+    LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(1:numShadow))) = ShadowA(1:numShadow);
+    LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(1:numShadow))) = ShadowA(1:numShadow);
+end
 % 计算中间带变换后的a,b值.
 MA = MiddleASourceLocalMatte;
 MB = MiddleBSourceLocalMatte;
 TransformMiddleData = [MA' - SMMA;MB' - SMMB];
 MatrixMiddle = MiddleTransformMatrix*TransformMiddleData;
-LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)))) = MatrixMiddle(1,:) + TMMA;
-LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)))) = MatrixMiddle(2,:) + TMMB;
-LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)))) = MatrixMiddle(1,:) + TMMA;
-LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)))) = MatrixMiddle(2,:) + TMMB;
+MiddleA = MatrixMiddle(1,:) + TMMA;
+MiddleB = MatrixMiddle(2,:) + TMMB;
+numMiddle = floor(SizeSourceLocalMatte/3) - floor(2*Alpha*SizeSourceLocalMatte/3);
+LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(floor((1+Alpha)*SizeSourceLocalMatte/3)+1:floor((1+Alpha)*SizeSourceLocalMatte/3)+numMiddle))) = MiddleA(floor(2*Alpha*SizeSourceLocalMatte/3)+1:2*Alpha*SizeSourceLocalMatte/3+numMiddle);
+LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(floor((1+Alpha)*SizeSourceLocalMatte/3)+1:floor((1+Alpha)*SizeSourceLocalMatte/3)+numMiddle))) = MiddleB(floor(2*Alpha*SizeSourceLocalMatte/3)+1:2*Alpha*SizeSourceLocalMatte/3+numMiddle);
+if  OpenMatteS == 1
+    LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(floor((1+Alpha)*SizeSourceLocalMatte/3)+1:floor((1+Alpha)*SizeSourceLocalMatte/3)+numMiddle))) = MiddleA(floor(2*Alpha*SizeSourceLocalMatte/3)+1:2*Alpha*SizeSourceLocalMatte/3+numMiddle);
+    LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(floor((1+Alpha)*SizeSourceLocalMatte/3)+1:floor((1+Alpha)*SizeSourceLocalMatte/3)+numMiddle))) = MiddleB(floor(2*Alpha*SizeSourceLocalMatte/3)+1:2*Alpha*SizeSourceLocalMatte/3+numMiddle);
+end
+
 % 计算高亮带变换后的a,b值.
 HA = HighASourceLocalMatte;
 HB = HighBSourceLocalMatte;
 TransformHighData = [HA' - SMHA;HB' - SMHB];
 MatrixHigh = HighTransformMatrix*TransformHighData;
-LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))) = MatrixHigh(1,:) + TMHA;
-LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))) = MatrixHigh(2,:) + TMHB;
-LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))) = MatrixHigh(1,:) + TMHA;
-LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))) = MatrixHigh(2,:) + TMHB;
+HighA = MatrixHigh(1,:) + TMHA;
+HighB = MatrixHigh(2,:) + TMHB;
+numHigh = SizeSourceLocalMatte - floor((2+Alpha)*SizeSourceLocalMatte/3);
+beginHigh = floor((2+Alpha)*SizeSourceLocalMatte/3)+1;
+LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(beginHigh:beginHigh + numHigh -1))) = HighA(floor(2*Alpha*SizeSourceLocalMatte/3)+1:floor(2*Alpha*SizeSourceLocalMatte/3)+numHigh);
+LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(beginHigh:beginHigh + numHigh -1))) = HighB(floor(2*Alpha*SizeSourceLocalMatte/3)+1:floor(2*Alpha*SizeSourceLocalMatte/3)+numHigh);
+if  OpenMatteS == 1
+    LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(beginHigh:beginHigh + numHigh -1))) = HighA(floor(2*Alpha*SizeSourceLocalMatte/3)+1:floor(2*Alpha*SizeSourceLocalMatte/3)+numHigh);
+    LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(beginHigh:beginHigh + numHigh -1))) = HighB(floor(2*Alpha*SizeSourceLocalMatte/3)+1:floor(2*Alpha*SizeSourceLocalMatte/3)+numHigh);
+end
+%% 抽取各阴影带的渐变矩阵.
 
+% 定义权重矩阵.
+WeightSize = 2 * floor(Alpha*SizeSourceLocalMatte/3) + 1;
+WeightDescend = WeightSize:-1:1;
+WeightDescend = (WeightDescend/WeightSize).^3;
+WeightAscend = 1:WeightSize;
+WeightAscend = (WeightAscend/WeightSize).^3;
+Weight = WeightDescend + WeightAscend;
+WeightDescend = WeightDescend./Weight;
+WeightAscend = WeightAscend./Weight;
+
+% 提取阴影右渐变带和中间左渐变带.
+numShadowMiddle = WeightSize;
+ShadowRightA = ShadowA(floor((1-Alpha)*SizeSourceLocalMatte/3)+1:floor((1-Alpha)*SizeSourceLocalMatte/3) + numShadowMiddle);
+ShadowRightB = ShadowB(floor((1-Alpha)*SizeSourceLocalMatte/3)+1:floor((1-Alpha)*SizeSourceLocalMatte/3) + numShadowMiddle);
+MiddleLeftA = MiddleA(1:numShadowMiddle);
+MiddleLeftB = MiddleB(1:numShadowMiddle);
+ShadowMiddleTransitionA = ShadowRightA.*WeightDescend + MiddleLeftA.*WeightAscend;
+ShadowMiddleTransitionB = ShadowRightB.*WeightDescend + MiddleLeftB.*WeightAscend;
+beginShadowMiddle = floor((1-Alpha)*SizeSourceLocalMatte/3) + 1;
+LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(beginShadowMiddle:beginShadowMiddle + numShadowMiddle -1))) = ShadowMiddleTransitionA;
+LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(beginShadowMiddle:beginShadowMiddle + numShadowMiddle -1))) = ShadowMiddleTransitionB;
+if  OpenMatteS == 1
+    LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(beginShadowMiddle:beginShadowMiddle + numShadowMiddle -1))) = ShadowMiddleTransitionA;
+    LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(beginShadowMiddle:beginShadowMiddle + numShadowMiddle -1))) = ShadowMiddleTransitionB;
+end
+
+% 提取中间右渐变带和高亮左渐变带.
+numMiddleHigh = WeightSize;
+MiddleRightA = MiddleA(floor(SizeSourceLocalMatte/3)+1:floor(SizeSourceLocalMatte/3) + numMiddleHigh);
+MiddleRightB = MiddleB(floor(SizeSourceLocalMatte/3)+1:floor(SizeSourceLocalMatte/3) + numMiddleHigh);
+HighLeftA = HighA(1:numMiddleHigh);
+HighLeftB = HighB(1:numMiddleHigh);
+MiddleHighTransitionA = MiddleRightA.*WeightDescend + HighLeftA.*WeightDescend;
+MiddleHighTransitionB = MiddleRightB.*WeightDescend + HighLeftB.*WeightDescend;
+beginMiddleHigh = floor((2-Alpha)*SizeSourceLocalMatte/3)+1;
+LABSourceMatteChannelA(IndexSourceMatte(IndexSourceLocalMatte(beginMiddleHigh:beginMiddleHigh + numMiddleHigh -1))) = MiddleHighTransitionA;
+LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(beginMiddleHigh:beginMiddleHigh + numMiddleHigh -1))) = MiddleHighTransitionB;
+if  OpenMatteS == 1
+    LABSourceChannelA(IndexSourceMatte(IndexSourceLocalMatte(beginMiddleHigh:beginMiddleHigh + numMiddleHigh -1))) = MiddleHighTransitionA;
+    LABSourceChannelB(IndexSourceMatte(IndexSourceLocalMatte(beginMiddleHigh:beginMiddleHigh + numMiddleHigh -1))) = MiddleHighTransitionB;
+end
 
 %% 合成最后结果.
 if OpenMatteS == 1
