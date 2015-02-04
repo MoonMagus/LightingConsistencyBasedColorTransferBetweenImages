@@ -70,6 +70,7 @@ set(handles.TransitionSkeleton,'Visible','on');
 set(handles.TransitionDetail,'Visible','off');
 
 DisplaySkeletonPanel(handles,1);
+DisplayDetailPanel(handles,0);
 %控制详细面板切换.
 function SwitchDetailPanel(handles)
 global MainColor
@@ -87,6 +88,9 @@ set(handles.TransitionSkeleton,'Visible','off');
 set(handles.TransitionDetail,'Visible','on');
 
 DisplaySkeletonPanel(handles,0);
+DisplayDetailPanel(handles,1);
+FillDetailPopMemuData(handles.LeftImage);
+FillDetailPopMemuData(handles.RightImage);
 
 
 %梗概细节显示控制面板.
@@ -105,6 +109,12 @@ else
     set(handles.ControlPanel,'Visible','off');
 end
 
+function DisplayDetailPanel(handles,DisplayOpen)
+if  DisplayOpen == 1
+    set(handles.DetailDisplayPanel,'Visible','on');
+else
+    set(handles.DetailDisplayPanel,'Visible','off');
+end
 
 function InitialAxes(handles)
 % 源图像蒙版下拉回调函数.
@@ -151,6 +161,12 @@ set(handles.TargetPreview2,...
     'Units','Pixels',...
     'XTick',[],'YTick',[]);
 set(handles.TargetMattePreview2,...
+    'Units','Pixels',...
+    'XTick',[],'YTick',[]);
+set(handles.ContrastLeft,...
+    'Units','Pixels',...
+    'XTick',[],'YTick',[]);
+set(handles.ContrastRight,...
     'Units','Pixels',...
     'XTick',[],'YTick',[]);
 
@@ -281,27 +297,36 @@ else
     OpenMatteT = 0;
     MatteT = 0;
 end
-[WholeLuminOnlyResult, WholeHueSynResult, LuminaOnlyResult, HueSynResult,rs ,rt, ls, lsh, lt, lth, lr, lrh, SynSL, SynRL] = ...
-LocalTransformation(Target, Source, OpenMatteT, OpenMatteS, MatteT, MatteS);
+[WholeLuminOnlyResult, WholeHueOnlyResult, WholeHueSynResult, LuminaOnlyResult, HueOnlyResult, HueSynResult,rs ,rt, ls, lsh, lt, lth, lr, lrh, SynSL, SynRL] = ...
+LocalTransformation(Target, Source, OpenMatteT, OpenMatteS, MatteT, MatteS,1,0.1);
 handles.WholeLuminOnlyResult = WholeLuminOnlyResult;
+handles.WholeHueOnlyResult =WholeHueOnlyResult;
 handles.WholeHueSynResult = WholeHueSynResult;
 handles.LuminaOnlyResult = LuminaOnlyResult;
+handles.HueOnlyResult = HueOnlyResult;
 handles.HueSynResult = HueSynResult;
+% 保存裁剪后的源图像，无蒙版则保存原始源图像.
 handles.rs = rs;
+% 保存裁剪后的目标图像，无蒙版则保存原始目标图像.
 handles.rt = rt;
+% 保存裁剪后源图像的直方图分布.
 handles.ls = ls;
 handles.lsh = lsh;
+% 保存裁剪后目标图像的直方图分布.
 handles.lt = lt;
 handles.lth = lth;
+% 保存裁剪后结果图像的直方图分布.
 handles.lr = lr;
 handles.lrh = lrh;
+% 保存未裁剪图像的L通道数据.
 handles.SynSL = SynSL;
+% 保存未裁剪图像蒙版区域拉伸后的L通道数据.
 handles.SynRL = SynRL;
 handles.Source = Source;
 
 %% 进行数据再次计算.
 if  get(handles.SourceMatteCheck,'Value') == 1 && get(handles.SourceBackSyn,'Value') == 1
-    SourceAgain = WholeHueSynResult;
+    SourceAgain = Source;
     SourceMAgain = 255 - MatteS;
     OpenMatteS = 1;
     if  get(handles.TargetMatteCheck1,'Value') == 1 && get(handles.TargetBackSyn,'Value') == 1 
@@ -322,11 +347,13 @@ if  get(handles.SourceMatteCheck,'Value') == 1 && get(handles.SourceBackSyn,'Val
             OpenMatteT = 0;
         end
     end
-    [WholeLuminOnlyResultAgain, WholeHueSynResultAgain, LuminaOnlyResultAgain, HueSynResultAgain,rsa ,rta, lsa, lsha, lta, ltha, lra, lrha] = ...
-    LocalTransformation(TargetAgain, SourceAgain, OpenMatteT, OpenMatteS, TargetMAgain, SourceMAgain);
+    [WholeLuminOnlyResultAgain, WholeHueOnlyResultAgain, WholeHueSynResultAgain, LuminaOnlyResultAgain, HueOnlyResultAgain, HueSynResultAgain,rsa ,rta, lsa, lsha, lta, ltha, lra, lrha] = ...
+    LocalTransformation(TargetAgain, SourceAgain, OpenMatteT, OpenMatteS, TargetMAgain, SourceMAgain, 1, 0.1);
     handles.WholeLuminOnlyResultAgain = WholeLuminOnlyResultAgain;
+    handles.WholeHueOnlyResultAgain = WholeHueOnlyResultAgain;
     handles.WholeHueSynResultAgain = WholeHueSynResultAgain;
     handles.LuminaOnlyResultAgain = LuminaOnlyResultAgain;
+    handles.HueOnlyResultAgain = HueOnlyResultAgain;
     handles.HueSynResultAgain = HueSynResultAgain; 
     handles.rsa = rsa;
     handles.rta = rta;
@@ -336,10 +363,17 @@ if  get(handles.SourceMatteCheck,'Value') == 1 && get(handles.SourceBackSyn,'Val
     handles.ltha = ltha;
     handles.lra = lra;
     handles.lrha = lrha;
+    CompositeLuminOnlyResult = CatImageMatteRegion(WholeLuminOnlyResult, WholeLuminOnlyResultAgain, MatteS);
+    handles.CompositeLuminOnly = CompositeLuminOnlyResult;
+    CompostiteHueOnlyResult =  CatImageMatteRegion(WholeHueOnlyResult, WholeHueOnlyResultAgain, MatteS);
+    handles.CompostiteHueOnlyResult =CompostiteHueOnlyResult;
+    CompositeHueSynResult = CatImageMatteRegion(WholeHueSynResult, WholeHueSynResultAgain, MatteS);
+    handles.CompositeHueSynResult = CompositeHueSynResult;
 end
 guidata(hObject, handles);
 ShowSourceAndResultPanel(handles);
 ShowTargetPanel(handles);
+
 
 %% 显示源图像和结果面板.
 function ShowSourceAndResultPanel(handles)
@@ -389,8 +423,9 @@ else if get(handles.SourceBackgroundButton,'Value') == 1
         axes(handles.LuminanceSourceAxis);
         imshow(LuminanceSourceHist);
 
+        %需要更改.
         axes(handles.ColorMatchedAxis);
-        imshow(handles.WholeHueSynResultAgain);
+        imshow(handles.CompositeHueSynResult);
         axes(handles.HistMatchedAxis);
         LuminanceResultHist = im2uint8(mat2gray(handles.SynRL,[0 100]));
         imhist(LuminanceResultHist);
@@ -426,48 +461,51 @@ end
 % 保存指定的图像.
 function Save_Callback(hObject, eventdata, handles)
 dirname = uigetdir('C:\Users\devil\Desktop\测试','浏览文件夹');
-name = strcat(dirname,'\','1.源前景图像.jpg');
+deleteName = strcat(dirname,'\*.jpg');
+delete(deleteName);
+name = strcat(dirname,'\','00.原始图像.jpg');
+imwrite(handles.Source,name);
+name = strcat(dirname,'\','01.源前景图像.jpg');
 imwrite(handles.rs,name);
-name = strcat(dirname,'\','2.目标前景图像.jpg');
+name = strcat(dirname,'\','02.目标前景图像.jpg');
 imwrite(handles.rt,name);
-name = strcat(dirname,'\','3.结果前景色调同步图像.jpg');
+name = strcat(dirname,'\','03.前景色调同步图像.jpg');
 imwrite(handles.HueSynResult,name);
-name = strcat(dirname,'\','4.结果前景辐照度图像.jpg');
+name = strcat(dirname,'\','04.前景辐照度图像.jpg');
 imwrite(handles.LuminaOnlyResult,name);
+name = strcat(dirname,'\','05.前景色调图像.jpg');
+imwrite(handles.HueOnlyResult,name);
 if  get(handles.SourceMatteCheck,'Value') == 1
-    name = strcat(dirname,'\','5.结果色调同步图像.jpg');
+    name = strcat(dirname,'\','06.完整前景色调同步图像.jpg');
     imwrite(handles.WholeHueSynResult,name);
-    name = strcat(dirname,'\','6.结果辐照度图像.jpg');
+    name = strcat(dirname,'\','07.完整前景辐照度图像.jpg');
     imwrite(handles.WholeLuminOnlyResult,name);
+    name = strcat(dirname,'\','08.完整前景色调图像.jpg');
+    imwrite(handles.WholeHueOnlyResult,name);
 end
 if  get(handles.SourceMatteCheck,'Value') == 1 && get(handles.SourceBackSyn,'Value') == 1
-    if get(handles.SourceMatteCheck,'Value') == 1
-        name = strcat(dirname,'\','7.源背景图像.jpg');
-        imwrite(handles.rsa,name);
-        name = strcat(dirname,'\','8.目标背景图像.jpg');
-        imwrite(handles.rta,name);
-        name = strcat(dirname,'\','9.结果前景色调同步图像.jpg');
-        imwrite(handles.HueSynResultAgain,name);
-        name = strcat(dirname,'\','10.结果前景辐照度图像.jpg');
-        imwrite(handles.LuminaOnlyResultAgain,name);
-        name = strcat(dirname,'\','11.结果色调同步图像.jpg');
-        imwrite(handles.WholeLuminOnlyResultAgain,name);
-        name = strcat(dirname,'\','12.结果辐照度图像.jpg');
-        imwrite(handles.WholeHueSynResultAgain,name);
-    else
-        name = strcat(dirname,'\','5.源背景图像.jpg');
-        imwrite(handles.rsa,name);
-        name = strcat(dirname,'\','6.目标背景图像.jpg');
-        imwrite(handles.rta,name);
-        name = strcat(dirname,'\','7.结果前景色调同步图像.jpg');
-        imwrite(handles.HueSynResultAgain,name);
-        name = strcat(dirname,'\','8.结果前景辐照度图像.jpg');
-        imwrite(handles.LuminaOnlyResultAgain,name);
-        name = strcat(dirname,'\','9.结果色调同步图像.jpg');
-        imwrite(handles.WholeLuminOnlyResultAgain,name);
-        name = strcat(dirname,'\','10.结果辐照度图像.jpg');
-        imwrite(handles.WholeHueSynResultAgain,name);
-    end
+    name = strcat(dirname,'\','09.源背景图像.jpg');
+    imwrite(handles.rsa,name);
+    name = strcat(dirname,'\','10.目标背景图像.jpg');
+    imwrite(handles.rta,name);
+    name = strcat(dirname,'\','11.背景色调同步图像.jpg');
+    imwrite(handles.HueSynResultAgain,name);
+    name = strcat(dirname,'\','12.背景辐照度图像.jpg');
+    imwrite(handles.LuminaOnlyResultAgain,name);
+    name = strcat(dirname,'\','13.背景色调图像.jpg');
+    imwrite(handles.HueOnlyResultAgain,name);
+    name = strcat(dirname,'\','14.完整背景色调同步图像.jpg');
+    imwrite(handles.WholeHueSynResultAgain,name);
+    name = strcat(dirname,'\','15.完整背景辐照度图像.jpg');
+    imwrite(handles.WholeLuminOnlyResultAgain,name);
+    name = strcat(dirname,'\','16.完整背景色调图像.jpg');
+    imwrite(handles.WholeHueOnlyResultAgain,name);
+    name = strcat(dirname,'\','17.结果色调同步图像.jpg');
+    imwrite(handles.CompositeHueSynResult,name);
+    name = strcat(dirname,'\','18.结果辐照度图像.jpg');
+    imwrite(handles.CompositeLuminOnly,name);
+    name = strcat(dirname,'\','19.结果色调图像.jpg');
+    imwrite(handles.CompostiteHueOnlyResult,name);
 end
 
 
@@ -496,14 +534,27 @@ else if ListNumber(get(hObject,'Value')) == 1
                  end
              end
          end
+    else if ListNumber(get(hObject,'Value')) == 3
+             if  get(handles.SourceForegroundButton,'Value') == 1
+                imshow(handles.HueOnlyResult);
+             else if get(handles.SourceBackgroundButton,'Value') == 1
+                    imshow(handles.HueOnlyResultAgain);
+                 else if get(handles.SourceSynButton,'Value') == 1
+                        imshow(handles.WholeHueOnlyResultAgain);
+                     end
+                 end
+             end
+        end
     end
 end
+
+
 function ResultTypeSelect_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-ListImage = '色调同步图像|辐照度图像';
-filenames = [1 2];
+ListImage = '色调同步图像|辐照度图像|色调图像';
+filenames = [1 2 3];
 set(hObject,'String',ListImage);
 set(hObject,'UserData',filenames);
 set(hObject,'Value',1);
@@ -587,3 +638,55 @@ function SourceSynButton_Callback(hObject, eventdata, handles)
         ShowSourceAndResultPanel(handles);
         set(handles.ResultTypeSelect,'Value',1);
     end
+
+% 填充细节窗口.
+function FillDetailWindow(hObject, AxesHandle)
+ListName = get(hObject,'UserData');
+CurrentImageName = char(ListName(get(hObject,'Value')));
+CurImage = imread(strcat('C:\Users\devil\Desktop\测试\',CurrentImageName));
+axes(AxesHandle);
+imshow(CurImage);
+
+% 拉取DetailPopMenu下的内容.
+function FillDetailPopMemuData(hObject, ImageName)
+dirs1 = dir('C:\Users\devil\Desktop\测试\*.jpg');
+dirs2 = dir('C:\Users\devil\Desktop\测试\*.bmp');
+dirs = [dirs1;dirs2];
+dircell = struct2cell(dirs)';
+filenames = dircell(:,1);
+[x,~] = size(filenames);
+if x > 0 
+    ListImage = char(filenames(1));
+else
+    ListImage = '';
+end
+for i = 2:x
+    ListImage = strcat(ListImage,'|',char(filenames(i)));
+end
+i = 1;
+if nargin == 2
+    for i=1:x
+        if strcmp(char(filenames(i)),ImageName)==1
+            break;
+        end
+    end
+end
+set(hObject,'String',ListImage);
+set(hObject,'UserData',filenames);
+set(hObject,'Value',i);
+
+function LeftImage_Callback(hObject, eventdata, handles)
+FillDetailWindow(hObject,handles.ContrastLeft);
+function LeftImage_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+FillDetailPopMemuData(hObject);
+
+function RightImage_Callback(hObject, eventdata, handles)
+FillDetailWindow(hObject,handles.ContrastRight);
+function RightImage_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+FillDetailPopMemuData(hObject);

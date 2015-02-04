@@ -1,4 +1,4 @@
-function [WholeLuminOnlyResult, WholeHueSynResult, LuminaOnlyResult, HueSynResult,rs ,rt, ls, lsh, lt, lth, lr, lrh, SynSL, SynRL] = LocalTransformation(Target, Source, OpenMatteT, OpenMatteS, MatteT, MatteS)
+function [WholeLuminOnlyResult, WholeHueOnlyResult, WholeHueSynResult, LuminaOnlyResult, HueOnlyResult, HueSynResult,rs ,rt, ls, lsh, lt, lth, lr, lrh, SynSL, SynRL] = LocalTransformation(Target, Source, OpenMatteT, OpenMatteS, MatteT, MatteS, OpenFilter, Alpha)
 %%-----------------------------------------------------------------------
 % 对图像对的蒙版区域进行局部变换:
 %     Target : 目标图像.
@@ -18,8 +18,13 @@ if nargin == 0
     MatteS = imread('Images/interviewMatte.jpg');
     OpenMatteT = 1;
     OpenMatteS = 1;
+else if nargin < 6
+        OpenFilter = 1;
+        Alpha = 0.1;
+    end
 end
-Alpha = 0.1;
+Alpha = 0;
+% OpenFilter = 0;
 %% 将蒙版叠加到目标图像上.
 t = Target;
 if OpenMatteT == 1
@@ -105,6 +110,7 @@ end
 LABSourceMatteChannelL = LABSourceMatteImage(:,:,1);
 LABSourceMatteChannelA = LABSourceMatteImage(:,:,2);
 LABSourceMatteChannelB = LABSourceMatteImage(:,:,3);
+MatteOriginal = LABSourceMatteChannelL;
 % 保持目标区域的A、B通道用于输出.
 LABSourceMatteLuminanceOnlyChannelA = LABSourceMatteChannelA;
 LABSourceMatteLuminanceOnlyChannelB = LABSourceMatteChannelB;
@@ -112,6 +118,7 @@ if OpenMatteS == 1
     LABSourceChannelL = LABSourceImage(:,:,1);
     LABSourceChannelA = LABSourceImage(:,:,2);
     LABSourceChannelB = LABSourceImage(:,:,3);
+    SourceOriginal = LABSourceChannelL;
     % 保存源图像的L通道用于直方图统计.
     SynSL = LABSourceChannelL;
     LABSourceLuminanceOnlyChannelA = LABSourceChannelA;
@@ -145,6 +152,19 @@ SourceMatteLuminanceTranferResult = histeq(SourceMatteLuminanceData,TargetHistCo
 resultImageDouble = mat2gray(SourceMatteLuminanceTranferResult,[0 255]);
 resultImageDouble = resultImageDouble*100;
 LABSourceMatteChannelL(IndexSourceMatte) = resultImageDouble;
+% 开启Luminance通道滤波.
+if  OpenFilter == 1
+    LuminanceBlurRegion = im2uint8(mat2gray(LABSourceMatteChannelL,[0 100]));
+    gausFilter = fspecial('gaussian',[2 2],0.5);
+    LuminanceBlurRegion = imfilter(LuminanceBlurRegion,gausFilter,'replicate');
+    LABSourceMatteChannelA = imfilter(LABSourceMatteChannelA,gausFilter,'replicate');
+    LABSourceMatteChannelB = imfilter(LABSourceMatteChannelB,gausFilter,'replicate');
+    ChannelASourceLocalMatte = LABSourceMatteChannelA(IndexSourceMatte);
+    ChannelBSourceLocalMatte = LABSourceMatteChannelB(IndexSourceMatte);
+    LuminanceBlurRegion = 100*mat2gray(LuminanceBlurRegion,[0,255]);
+    resultImageDouble = LuminanceBlurRegion(IndexSourceMatte);
+    LABSourceMatteChannelL(IndexSourceMatte) = resultImageDouble;
+end
 if  OpenMatteS == 1 
     LABSourceChannelL(IndexSourceMatte) = resultImageDouble;
      % 保存源图像拉伸后的L通道用于直方图统计.
@@ -255,7 +275,7 @@ end
 %% 抽取各阴影带的渐变矩阵.
 
 % 定义权重矩阵.
-WeightSize = 2 * floor(Alpha*SizeSourceLocalMatte/3) + 1;
+WeightSize = 2 * floor(Alpha*SizeSourceLocalMatte/3);
 WeightDescend = WeightSize:-1:1;
 WeightDescend = (WeightDescend/WeightSize).^3;
 WeightAscend = 1:WeightSize;
@@ -266,8 +286,8 @@ WeightAscend = WeightAscend./Weight;
 
 % 提取阴影右渐变带和中间左渐变带.
 numShadowMiddle = WeightSize;
-ShadowRightA = ShadowA(floor((1-Alpha)*SizeSourceLocalMatte/3)+1:floor((1-Alpha)*SizeSourceLocalMatte/3) + numShadowMiddle);
-ShadowRightB = ShadowB(floor((1-Alpha)*SizeSourceLocalMatte/3)+1:floor((1-Alpha)*SizeSourceLocalMatte/3) + numShadowMiddle);
+ShadowRightA = ShadowA(end - numShadowMiddle + 1:end);
+ShadowRightB = ShadowB(end - numShadowMiddle + 1:end);
 MiddleLeftA = MiddleA(1:numShadowMiddle);
 MiddleLeftB = MiddleB(1:numShadowMiddle);
 ShadowMiddleTransitionA = ShadowRightA.*WeightDescend + MiddleLeftA.*WeightAscend;
@@ -282,8 +302,8 @@ end
 
 % 提取中间右渐变带和高亮左渐变带.
 numMiddleHigh = WeightSize;
-MiddleRightA = MiddleA(floor(SizeSourceLocalMatte/3)+1:floor(SizeSourceLocalMatte/3) + numMiddleHigh);
-MiddleRightB = MiddleB(floor(SizeSourceLocalMatte/3)+1:floor(SizeSourceLocalMatte/3) + numMiddleHigh);
+MiddleRightA = MiddleA(end - numMiddleHigh + 1:end);
+MiddleRightB = MiddleB(end - numMiddleHigh + 1:end);
 HighLeftA = HighA(1:numMiddleHigh);
 HighLeftB = HighB(1:numMiddleHigh);
 MiddleHighTransitionA = MiddleRightA.*WeightDescend + HighLeftA.*WeightDescend;
@@ -299,11 +319,14 @@ end
 %% 合成最后结果.
 if OpenMatteS == 1
     WholeLuminOnlyResult = Lab2RGB(LABSourceChannelL,LABSourceLuminanceOnlyChannelA,LABSourceLuminanceOnlyChannelB);
+    WholeHueOnlyResult = Lab2RGB(SourceOriginal,LABSourceChannelA,LABSourceChannelB);
     WholeHueSynResult = Lab2RGB(LABSourceChannelL,LABSourceChannelA,LABSourceChannelB);
 else 
     WholeLuminOnlyResult =0;
+    WholeHueOnlyResult = 0;
     WholeHueSynResult = 0;
 end
 LuminaOnlyResult = Lab2RGB(LABSourceMatteChannelL,LABSourceMatteLuminanceOnlyChannelA,LABSourceMatteLuminanceOnlyChannelB);
+HueOnlyResult = Lab2RGB(MatteOriginal,LABSourceMatteChannelA, LABSourceMatteChannelB);
 HueSynResult = Lab2RGB(LABSourceMatteChannelL, LABSourceMatteChannelA, LABSourceMatteChannelB);
 

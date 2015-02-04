@@ -12,7 +12,7 @@ function BandRegion(Target, Source, OpenMatteT, OpenMatteS, MatteT, MatteS)
 if nargin == 0
     Target = 'Images/花台.jpg';
     MatteT = 'Images/transformersMatte.jpg';
-    Source = 'Images/谢嘉琪.jpg';
+    Source = 'Images/amelie.jpg';
     MatteS = 'Images/interviewMatte.jpg';
     OpenMatteT = 0;
     OpenMatteS = 0;
@@ -109,9 +109,9 @@ LABSourceMatteChannelB(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSource
  maxm = max(LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)))))
  minh = min(LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))))
  maxh = max(LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))))
-% LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3)))) = 20;
-% LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)))) = 60;
-% LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))) = 100;
+LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(1:floor(SizeSourceLocalMatte/3)))) = 20;
+LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(floor(SizeSourceLocalMatte/3)+1:floor(2*SizeSourceLocalMatte/3)))) = 60;
+LABSourceMatteChannelL(IndexSourceMatte(IndexSourceLocalMatte(floor(2*SizeSourceLocalMatte/3)+1:SizeSourceLocalMatte))) = 100;
 %% 合成最后结果.
 Result = Lab2RGB(LABSourceMatteChannelL, LABSourceMatteChannelA, LABSourceMatteChannelB);
 figure,imshow(Result);
